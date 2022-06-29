@@ -1,6 +1,5 @@
 var express = require('express');
 var app = express();
-var xmlparser = require('express-xml-bodyparser');
 
 require('dotenv').config()
 
@@ -20,8 +19,6 @@ app.get('/', function(request, response) {
   }
   response.render('index.html', { env: envName});
 });
-
-app.use(xmlparser());
 
 app.post("/new_contact", function(req, res) {
     var notification = req.body["soapenv:envelope"]["soapenv:body"][0]["notifications"][0];
