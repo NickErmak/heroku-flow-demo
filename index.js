@@ -1,6 +1,12 @@
 var express = require('express');
+var bodyParser = require('body-parser');
+
 var app = express();
-var router = express.Router();
+
+// create application/json parser
+var jsonParser = bodyParser.json() 
+// create application/x-www-form-urlencoded parser
+var urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 require('dotenv').config()
 
@@ -21,7 +27,7 @@ app.get('/', function(request, response) {
   response.render('index.html', { env: envName});
 });
 
-app.post("/new_contact", function(req, res) {
+app.post("/new_contact", urlencodedParser, function(req, res) {
   console.log(JSON.stringify(req.body));
     var notification = req.body["soapenv:envelope"]["soapenv:body"][0]["notifications"][0];
     var sessionId = notification["sessionid"][0];
