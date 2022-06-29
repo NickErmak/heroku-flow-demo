@@ -1,5 +1,6 @@
 var express = require('express');
 var app = express();
+var router = express.Router();
 
 require('dotenv').config()
 
@@ -21,6 +22,7 @@ app.get('/', function(request, response) {
 });
 
 app.post("/new_contact", function(req, res) {
+  console.log(JSON.stringify(req.body));
     var notification = req.body["soapenv:envelope"]["soapenv:body"][0]["notifications"][0];
     var sessionId = notification["sessionid"][0];
     var data = {};
