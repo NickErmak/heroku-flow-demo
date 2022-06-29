@@ -1,13 +1,8 @@
 var express = require('express');
-var bodyParser = require('body-parser');
-
 var app = express();
 
-// create application/json parser
-var jsonParser = bodyParser.json() 
-// create application/x-www-form-urlencoded parser
-var urlencodedParser = bodyParser.urlencoded({ extended: false })
-
+var _ = require("lodash");
+var router = express.Router();
 require('dotenv').config()
 
 app.set('port', (process.env.PORT || 5000));
@@ -15,37 +10,55 @@ app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/public');
 
-app.get('/', function(request, response) {
-  var env = process.env.APP_ENV;
-  if (env == 'staging') {
-    var envName = 'staging'
-  } else if (env == 'production') {
-    var envName = 'production'
-  } else {
-    var envName = 'review app'
-  }
-  response.render('index.html', { env: envName});
-});
-
-app.post("/new_contact", urlencodedParser, function(req, res) {
-  console.log(JSON.stringify(req.body));
-    var notification = req.body["soapenv:envelope"]["soapenv:body"][0]["notifications"][0];
-    var sessionId = notification["sessionid"][0];
-    var data = {};
-    if (notification["notification"] !== undefined) {
-      var sobject = notification["notification"][0]["sobject"][0];
-      Object.keys(sobject).forEach(function(key) {
-        if (key.indexOf("sf:") == 0) {
-          var newKey = key.substr(3);
-          data[newKey] = sobject[key][0];
-        }
-      }); // do something #awesome with the data and sessionId
+router.get('/', function(request, response) {
+    var env = process.env.APP_ENV;
+    if (env == 'staging') {
+        var envName = 'staging'
+    } else if (env == 'production') {
+        var envName = 'production'
+    } else {
+        var envName = 'review app'
     }
-    res.status(201).end();
-  }); 
-
-app.listen(app.get('port'), function() {
-  console.log("Node app running at localhost:" + app.get('port'));
+    response.render('index.html', {
+        env: envName
+    });
 });
 
-module.exports = app
+router.post("/new_contact", function(req, res) {
+
+    // get the obm as an object
+    var message = unwrapMessage(req.body);
+    if (!_.isEmpty(message)) {
+
+        // some something #awesome with message
+        console.log(message);
+
+        // return a ‘true’ Ack to Salesforce
+        res.send(
+            'soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:out="http://soap.sforce.com/2005/09/outbound">true</soapenv:Envelope'
+        );
+    } else {
+        // return a ‘false’ Ack to Salesforce
+        res.send(
+            'soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:out="http://soap.sforce.com/2005/09/outbound">false</soapenv:Envelope'
+        );
+    }
+});
+
+// unwrap the xml and return object
+unwrapMessage = function(obj) {
+    try {
+        var orgId = obj['soapenv:envelope']['soapenv:body'][0].notifications[0].organizationid[0];
+        var contactId = obj['soapenv:envelope']['soapenv:body'][0].notifications[0].notification[0].sobject[0]['sf:id'][0];
+        var mobilePhone = obj['soapenv:envelope']['soapenv:body'][0].notifications[0].notification[0].sobject[0]['sf:mobilephone'][0];
+        return {
+            orgId: orgId,
+            contactId: contactId,
+            mobilePhone: mobilePhone
+        };
+    } catch (e) {
+        console.log('Could not parse OBM XML', e);
+        return {};
+    }
+};
+module.exports = router;
