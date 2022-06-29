@@ -1,6 +1,5 @@
-var express = require('express'),
-    app = express(),   
-    xmlparser = require('express-xml-bodyparser');
+var express = require('express');
+var app = express();
 
 require('dotenv').config()
 
