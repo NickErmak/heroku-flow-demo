@@ -21,8 +21,6 @@ app.get('/', function(request, response) {
   response.render('index.html', { env: envName});
 });
 
-app.use(express.json());
-app.use(express.urlencoded());
 app.use(xmlparser());
 
 app.post("/new_contact", function(req, res) {
